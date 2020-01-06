@@ -1,0 +1,59 @@
+CREATE STREAM training as
+    select * from processes
+    where hostidentifier = 'host1'
+    emit changes;
+
+CREATE SINK CONNECTOR training WITH (
+    'connector.class' = 'FileStreamSinkConnector',
+    'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'topics' = 'TRAINING',
+    'file' = '/project/cp/logs/train.log'
+);
+
+CREATE STREAM scored as
+    select 
+        hostidentifier as host, 
+        columns['path'] as path, 
+        columns['name'] as name, 
+        columns['cmdline'] as cmdline,
+        columns['cwd'] as cwd,
+        columns['root'] as root,
+        columns['state'] as state,
+        action,
+        lda(hostidentifier, 
+            columns['path'], 
+            columns['name'], 
+            columns['cmdline'],
+            columns['cwd'],
+            columns['root'],
+            columns['state'],
+            action
+        ) as score
+    from processes;
+
+CREATE STREAM good as
+    select *
+    from scored
+    where score >= .7
+    emit changes;
+
+CREATE STREAM bad as
+    select *
+    from scored
+    where score < .3
+    emit changes;
+
+CREATE STREAM ugly as
+    select *
+    from scored
+    where score >= .3 and score < .7
+    emit changes;
+
+CREATE SINK CONNECTOR feedback WITH (
+    'connector.class' = 'FileStreamSinkConnector',
+    'key.converter'  = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'topics' = 'GOOD',
+    'file' = '/project/cp/logs/feedback.log'
+);
