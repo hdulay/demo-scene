@@ -78,7 +78,7 @@ services:
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       # Assumes image is based on confluentinc/kafka-connect-datagen:latest which is pulling 5.1.1 Connect image
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.1.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.4.0-beta1.jar
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
@@ -155,7 +155,6 @@ services:
     depends_on:
       - broker
     command: /project/cp/start-osqueryd.sh
-    # command: tail -F anything
     volumes:
       - ..:/project
 
@@ -166,7 +165,6 @@ services:
     depends_on:
       - broker
     command: /project/cp/start-osqueryd.sh
-    # command: tail -F anything
     volumes:
       - ..:/project
 
@@ -177,15 +175,5 @@ services:
     ports:
       - 4567:4567
     command: java -cp /project/java/demo/target/demo-1.0-SNAPSHOT.jar io.confluent.osquery.ModelServer -s /project/cp/logs/ -k 100 
-    # command: tail -F anything
     volumes:
       - ..:/project
-
-  # jupyter:
-  #   image: jupyter/scipy-notebook
-  #   hostname: jupyter
-  #   container_name: jupyter
-  #   ports:
-  #     - "8888:8888"
-  #   volumes:
-  #     - ..:/home/jovyan/work
