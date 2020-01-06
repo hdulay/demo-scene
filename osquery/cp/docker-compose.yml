@@ -110,7 +110,7 @@ services:
       PORT: 9021
 
   ksql-server:
-    image: confluentinc/cp-ksql-server:5.4.0-beta1
+    image: confluentinc/ksqldb-server:0.6.0
     hostname: ksql-server
     container_name: ksql-server
     depends_on:
@@ -127,17 +127,19 @@ services:
       KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_CACHE_MAX_BYTES_BUFFERING: 0
       KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
-      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
-      KSQL_FUNCTIONS_LDA_ARTIFACTORY_URL: "http://artifactory:8080"
-      KSQL_FUNCTIONS_LDA_THRESHOLD: .3
-      KSQL_FUNCTIONS_LDA_BOOTSTRAP_SERVERS: "broker:29092"
-      KSQL_FUNCTIONS_LDA_TOPIC: "models"
-      KSQL_FUNCTIONS_LDA_GROUP_ID: "lda"
-      
+      # KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      # KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      # passed to the configurable UDF
+      KSQL_KSQL_FUNCTIONS_LDA_ENDPOINT: "http://model:4567/model/latest/score"
+      # sets the /ext directory to the path defined in the volumes section
+      KSQL_KSQL_EXTENSION_DIR: "/etc/ksql-server/ext/"
+      # ksql.connect.url
+      KSQL_KSQL_CONNECT_URL: "http://connect:8083"
+    volumes:
+      - ../java/demo/target/demo-1.0-SNAPSHOT.jar:/etc/ksql-server/ext/demo-udf.jar
 
   ksql-cli:
-    image: confluentinc/cp-ksql-cli:5.4.0-beta1
+    image: confluentinc/ksqldb-cli:0.6.0
     container_name: ksql-cli
     depends_on:
       - broker
@@ -153,7 +155,6 @@ services:
     depends_on:
       - broker
     command: /project/cp/start-osqueryd.sh
-    # command: tail -F anything
     volumes:
       - ..:/project
 
@@ -164,46 +165,15 @@ services:
     depends_on:
       - broker
     command: /project/cp/start-osqueryd.sh
-    # command: tail -F anything
     volumes:
       - ..:/project
 
-  jupyter:
-    image: jupyter/scipy-notebook
-    hostname: jupyter
-    container_name: jupyter
+  model:
+    image: openjdk:8
+    hostname: model
+    container_name: model
     ports:
-      - "8888:8888"
+      - 4567:4567
+    command: java -cp /project/java/demo/target/demo-1.0-SNAPSHOT.jar io.confluent.osquery.ModelServer -s /project/cp/logs/ -k 100 
     volumes:
-      - ..:/home/jovyan/work
-
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:5.6.0
-  #   container_name: elasticsearch
-  #   hostname: elasticsearch
-  #   #restart: always
-  #   depends_on:
-  #     - connect
-  #   ports:
-  #     - "9200:9200"
-  #     - "9300:9300"
-  #   environment:
-  #     xpack.security.enabled: "false"
-  #     discovery.type: "single-node"
-  #     ES_JAVA_OPTS: "-Xms1g -Xmx1g"
-  #   volumes:
-  #     - ..:/project
-      
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:5.5.2
-  #   container_name: kibana
-  #   hostname: kibana
-  #   restart: always
-  #   depends_on:
-  #     - elasticsearch
-  #   ports:
-  #     - "5601:5601"
-  #   volumes:
-  #     - ..:/project
-
-      
+      - ..:/project
