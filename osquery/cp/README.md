@@ -7,7 +7,7 @@ This is an example of how to use [OSQuery's Extensions](https://osquery.readthed
 To run `osqueryd` with the provided python extension, run the following command.
 
 ```bash
-OSQURY_CONFIG=cp.json osqueryd --extension /confluent_kafka.ext --logger_plugin=confluent_logger --config_plugin=osquery_confluent_config
+OSQURY_CONFIG=cp.json osqueryd --extension /confluent.ext --logger_plugin=confluent_logger --config_plugin=osquery_confluent_config
 ```
 
 OSQuery has 3 command line tools:
